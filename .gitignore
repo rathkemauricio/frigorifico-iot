@@ -5,9 +5,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # Banco de dados
-database/*.db
-database/*.sqlite
-database/*.sqlite3
+# # database/*.db
+# database/*.sqlite
+# database/*.sqlite3
 
 # Logs
 logs/
