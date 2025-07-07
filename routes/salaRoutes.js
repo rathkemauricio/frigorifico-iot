@@ -9,7 +9,8 @@ module.exports = function (db) {
       SELECT s.*, 
              COUNT(l.id) as total_leituras,
              AVG(l.temperatura) as temperatura_media,
-             MAX(l.data_hora) as ultima_leitura
+             MAX(l.data_hora) as ultima_leitura,
+             (SELECT temperatura FROM leituras WHERE id_sala = s.id ORDER BY data_hora DESC LIMIT 1) as temperatura_atual
       FROM salas s
       LEFT JOIN leituras l ON s.id = l.id_sala
       GROUP BY s.id
@@ -40,7 +41,8 @@ module.exports = function (db) {
       SELECT s.*, 
              COUNT(l.id) as total_leituras,
              AVG(l.temperatura) as temperatura_media,
-             MAX(l.data_hora) as ultima_leitura
+             MAX(l.data_hora) as ultima_leitura,
+             (SELECT temperatura FROM leituras WHERE id_sala = s.id ORDER BY data_hora DESC LIMIT 1) as temperatura_atual
       FROM salas s
       LEFT JOIN leituras l ON s.id = l.id_sala
       WHERE s.id = ?
@@ -72,7 +74,7 @@ module.exports = function (db) {
 
     // POST /api/salas - Criar nova sala
     router.post('/', (req, res) => {
-        const { nome, temperatura_ideal_min, temperatura_ideal_max } = req.body;
+        const { nome, tipo, temperatura_ideal_min, temperatura_ideal_max, descricao } = req.body;
 
         // Validação
         if (!nome || temperatura_ideal_min === undefined || temperatura_ideal_max === undefined) {
@@ -90,11 +92,11 @@ module.exports = function (db) {
         }
 
         const query = `
-      INSERT INTO salas (nome, temperatura_ideal_min, temperatura_ideal_max)
-      VALUES (?, ?, ?)
+      INSERT INTO salas (nome, tipo, temperatura_ideal_min, temperatura_ideal_max, descricao)
+      VALUES (?, ?, ?, ?, ?)
     `;
 
-        db.run(query, [nome, temperatura_ideal_min, temperatura_ideal_max], function (err) {
+        db.run(query, [nome, tipo || 'resfriamento', temperatura_ideal_min, temperatura_ideal_max, descricao || null], function (err) {
             if (err) {
                 if (err.message.includes('UNIQUE constraint failed')) {
                     return res.status(409).json({
@@ -131,7 +133,7 @@ module.exports = function (db) {
     // PUT /api/salas/:id - Atualizar sala
     router.put('/:id', (req, res) => {
         const { id } = req.params;
-        const { nome, temperatura_ideal_min, temperatura_ideal_max } = req.body;
+        const { nome, tipo, temperatura_ideal_min, temperatura_ideal_max, descricao } = req.body;
 
         // Verificar se a sala existe
         db.get('SELECT * FROM salas WHERE id = ?', [id], (err, sala) => {
@@ -169,6 +171,11 @@ module.exports = function (db) {
                 values.push(nome);
             }
 
+            if (tipo !== undefined) {
+                updates.push('tipo = ?');
+                values.push(tipo);
+            }
+
             if (temperatura_ideal_min !== undefined) {
                 updates.push('temperatura_ideal_min = ?');
                 values.push(temperatura_ideal_min);
@@ -177,6 +184,11 @@ module.exports = function (db) {
             if (temperatura_ideal_max !== undefined) {
                 updates.push('temperatura_ideal_max = ?');
                 values.push(temperatura_ideal_max);
+            }
+
+            if (descricao !== undefined) {
+                updates.push('descricao = ?');
+                values.push(descricao);
             }
 
             if (updates.length === 0) {

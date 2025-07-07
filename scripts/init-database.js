@@ -25,8 +25,10 @@ const createTables = () => {
       CREATE TABLE IF NOT EXISTS salas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT NOT NULL UNIQUE,
+        tipo TEXT DEFAULT 'resfriamento',
         temperatura_ideal_min REAL NOT NULL DEFAULT 1.0,
         temperatura_ideal_max REAL NOT NULL DEFAULT 5.0,
+        descricao TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `;
@@ -73,20 +75,20 @@ const createTables = () => {
 const insertSampleData = () => {
     return new Promise((resolve, reject) => {
         const salas = [
-            { nome: 'Sala de Resfriamento 1', temperatura_ideal_min: 1.0, temperatura_ideal_max: 5.0 },
-            { nome: 'Sala de Congelamento 1', temperatura_ideal_min: -18.0, temperatura_ideal_max: -15.0 },
-            { nome: 'Sala de Resfriamento 2', temperatura_ideal_min: 1.0, temperatura_ideal_max: 5.0 },
-            { nome: 'Sala de Congelamento 2', temperatura_ideal_min: -18.0, temperatura_ideal_max: -15.0 },
-            { nome: 'Sala de Processamento', temperatura_ideal_min: 2.0, temperatura_ideal_max: 6.0 }
+            { nome: 'Sala de Resfriamento 1', tipo: 'resfriamento', temperatura_ideal_min: 1.0, temperatura_ideal_max: 5.0, descricao: 'Sala para resfriamento de produtos' },
+            { nome: 'Sala de Congelamento 1', tipo: 'congelamento', temperatura_ideal_min: -18.0, temperatura_ideal_max: -15.0, descricao: 'Sala para congelamento de produtos' },
+            { nome: 'Sala de Resfriamento 2', tipo: 'resfriamento', temperatura_ideal_min: 1.0, temperatura_ideal_max: 5.0, descricao: 'Sala para resfriamento de produtos' },
+            { nome: 'Sala de Congelamento 2', tipo: 'congelamento', temperatura_ideal_min: -18.0, temperatura_ideal_max: -15.0, descricao: 'Sala para congelamento de produtos' },
+            { nome: 'Sala de Processamento', tipo: 'processamento', temperatura_ideal_min: 2.0, temperatura_ideal_max: 6.0, descricao: 'Sala para processamento de produtos' }
         ];
 
         const insertSala = db.prepare(`
-      INSERT OR IGNORE INTO salas (nome, temperatura_ideal_min, temperatura_ideal_max)
-      VALUES (?, ?, ?)
+      INSERT OR IGNORE INTO salas (nome, tipo, temperatura_ideal_min, temperatura_ideal_max, descricao)
+      VALUES (?, ?, ?, ?, ?)
     `);
 
         salas.forEach(sala => {
-            insertSala.run(sala.nome, sala.temperatura_ideal_min, sala.temperatura_ideal_max, (err) => {
+            insertSala.run(sala.nome, sala.tipo, sala.temperatura_ideal_min, sala.temperatura_ideal_max, sala.descricao, (err) => {
                 if (err) {
                     console.error('Erro ao inserir sala:', err.message);
                 }

@@ -563,10 +563,10 @@ function renderizarGraficoSala(sala) {
         };
 
         // Adicionar linhas de limite
-        if (sala.temperatura_min !== null && sala.temperatura_max !== null) {
+        if (sala.temperatura_ideal_min !== null && sala.temperatura_ideal_max !== null) {
             chartData.datasets.push({
                 label: 'Limite Mínimo',
-                data: new Array(data.length).fill(sala.temperatura_min),
+                data: new Array(data.length).fill(sala.temperatura_ideal_min),
                 borderColor: '#dc3545',
                 backgroundColor: 'transparent',
                 borderWidth: 1,
@@ -577,7 +577,7 @@ function renderizarGraficoSala(sala) {
 
             chartData.datasets.push({
                 label: 'Limite Máximo',
-                data: new Array(data.length).fill(sala.temperatura_max),
+                data: new Array(data.length).fill(sala.temperatura_ideal_max),
                 borderColor: '#dc3545',
                 backgroundColor: 'transparent',
                 borderWidth: 1,
