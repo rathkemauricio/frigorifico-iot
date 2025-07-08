@@ -41,7 +41,7 @@ class SalasPage {
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h2>
-                            <i class="bi bi-building text-primary"></i>
+                            <i class="bi bi-box-fill"></i>
                             Gerenciamento de Salas
                         </h2>
                         <button class="btn btn-primary" onclick="salasPage.showAddSalaModal()">
@@ -275,9 +275,6 @@ class SalasPage {
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-primary" onclick="salasPage.editSala(${sala.id})" title="Editar">
                             <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-outline-info" onclick="salasPage.viewSalaDetails(${sala.id})" title="Detalhes">
-                            <i class="bi bi-eye"></i>
                         </button>
                         <button class="btn btn-outline-danger" onclick="salasPage.deleteSala(${sala.id})" title="Excluir">
                             <i class="bi bi-trash"></i>

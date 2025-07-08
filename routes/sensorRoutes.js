@@ -1,6 +1,10 @@
 const express = require('express');
 const moment = require('moment');
 
+// Configurar moment.js para português
+require('moment/locale/pt-br');
+moment.locale('pt-br');
+
 module.exports = function (db, io) {
     const router = express.Router();
 

@@ -1,5 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
 const moment = require('moment');
+
+// Configurar moment.js para português
+require('moment/locale/pt-br');
+moment.locale('pt-br');
 const path = require('path');
 
 // Conectar ao banco de dados
