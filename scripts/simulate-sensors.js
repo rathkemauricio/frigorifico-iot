@@ -1,6 +1,10 @@
 const axios = require('axios');
 const moment = require('moment');
 
+// Configurar moment.js para português
+require('moment/locale/pt-br');
+moment.locale('pt-br');
+
 // Configurações
 const API_BASE_URL = 'http://localhost:3000/api';
 const INTERVAL = 60000; // 1 minuto

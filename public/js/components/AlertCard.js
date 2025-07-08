@@ -18,7 +18,7 @@ class AlertCard {
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h6 class="alert-heading mb-1">
-                                    <i class="bi bi-building me-2"></i>
+                                    <i class="bi bi-box-fill"></i>
                                     ${this.data.nome_sala}
                                 </h6>
                                 <p class="mb-1">
@@ -43,14 +43,6 @@ class AlertCard {
                                     ${this.data.tipo_alerta === 'baixa' ? 'Abaixo do mínimo' : 'Acima do máximo'}
                                 </small>
                             </div>
-                        </div>
-                        <div class="mt-2">
-                            <button class="btn btn-sm btn-outline-primary me-2" onclick="showGraficoSala(${this.data.id_sala})">
-                                <i class="bi bi-graph-up me-1"></i> Ver Gráfico
-                            </button>
-                            <button class="btn btn-sm btn-outline-info" onclick="showDetalhesSala(${this.data.id_sala})">
-                                <i class="bi bi-info-circle me-1"></i> Detalhes
-                            </button>
                         </div>
                     </div>
                 </div>

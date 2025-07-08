@@ -448,7 +448,7 @@ window.renderPaginaGraficos = function (salas) {
                     <div class="card">
                         <div class="card-header">
                             <h6 class="mb-0">
-                                <i class="bi bi-building"></i>
+                                <i class="bi bi-box-fill"></i>
                                 ${sala.nome}
                             </h6>
                         </div>

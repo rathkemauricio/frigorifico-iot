@@ -1,6 +1,10 @@
 const sqlite3 = require('sqlite3').verbose();
 const moment = require('moment');
 
+// Configurar moment.js para português
+require('moment/locale/pt-br');
+moment.locale('pt-br');
+
 // Conectar ao banco de dados
 const db = new sqlite3.Database('./database/frigorifico.db', (err) => {
     if (err) {

@@ -13,7 +13,7 @@ class TemperatureCard {
                 <div class="card alert-card h-100 ${statusClass}">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="mb-0">
-                            <i class="bi bi-building me-2"></i>
+                            <i class="bi bi-box-fill"></i>
                             ${this.data.nome}
                         </h6>
                         <span class="badge ${this.getBadgeClass()}">${statusText}</span>
@@ -35,14 +35,7 @@ class TemperatureCard {
                         </div>
                     </div>
                     <div class="card-footer">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <button class="btn btn-sm btn-outline-primary" onclick="showGraficoSala(${this.data.id})">
-                                <i class="bi bi-graph-up me-1"></i> Gráfico
-                            </button>
-                            <button class="btn btn-sm btn-outline-info" onclick="showDetalhesSala(${this.data.id})">
-                                <i class="bi bi-info-circle me-1"></i> Detalhes
-                            </button>
-                        </div>
+                      
                     </div>
                 </div>
             </div>
