@@ -119,7 +119,7 @@ class AlertasPage {
                                     <p class="card-text">Salas Afetadas</p>
                                 </div>
                                 <div>
-                                    <i class="bi bi-building fa-2x"></i>
+                                    <i class="bi bi-box-fill"></i>
                                 </div>
                             </div>
                         </div>

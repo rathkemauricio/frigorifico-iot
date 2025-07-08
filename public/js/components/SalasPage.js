@@ -63,7 +63,7 @@ class SalasPage {
                                     <p class="card-text">Total de Salas</p>
                                 </div>
                                 <div>
-                                    <i class="bi bi-building fa-2x"></i>
+                                    <i class="bi bi-box-fill"></i>
                                 </div>
                             </div>
                         </div>
