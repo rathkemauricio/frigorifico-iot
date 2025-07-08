@@ -35,10 +35,12 @@ const db = new sqlite3.Database('./database/frigorifico.db', (err) => {
 const sensorRoutes = require('./routes/sensorRoutes');
 const salaRoutes = require('./routes/salaRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const esp32Routes = require('./routes/esp32Routes');
 
 app.use('/api/sensores', sensorRoutes(db, io));
 app.use('/api/salas', salaRoutes(db));
 app.use('/api/dashboard', dashboardRoutes(db));
+app.use('/api/esp32', esp32Routes(db, io));
 
 // Rota principal
 app.get('/', (req, res) => {
