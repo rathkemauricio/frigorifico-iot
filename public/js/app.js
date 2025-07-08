@@ -443,8 +443,10 @@ class App {
                 const icon = toggleBtn.querySelector('i');
                 if (sidebar.classList.contains('collapsed')) {
                     icon.className = 'bi bi-list';
+                    document.body.classList.add('sidebar-collapsed');
                 } else {
                     icon.className = 'bi bi-x';
+                    document.body.classList.remove('sidebar-collapsed');
                 }
             }
 
@@ -466,6 +468,9 @@ class App {
                     const icon = toggleBtn.querySelector('i');
                     icon.className = 'bi bi-list';
                 }
+                document.body.classList.add('sidebar-collapsed');
+            } else {
+                document.body.classList.remove('sidebar-collapsed');
             }
         }
     }

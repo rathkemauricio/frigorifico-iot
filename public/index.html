@@ -52,42 +52,12 @@
 
         .sidebar {
             min-height: 100vh;
+            height: 100vh;
+            left: 0;
+            top: 0;
             background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-        }
-
-        .main-content {
-            background-color: #f8f9fa;
-        }
-
-        .navbar-brand {
-            font-weight: bold;
-            font-size: 1.5rem;
-        }
-
-        .temperature-gauge {
-            position: relative;
-            width: 120px;
-            height: 120px;
-        }
-
-        .gauge-circle {
-            transform: rotate(-90deg);
-        }
-
-        .gauge-value {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        /* Sidebar recolhível */
-        .sidebar {
-            transition: all 0.3s ease;
-            min-height: 100vh;
-            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            overflow-y: auto;
+            z-index: 1040;
         }
 
         .sidebar.collapsed {
@@ -113,28 +83,33 @@
 
         .main-content {
             transition: all 0.3s ease;
+            margin-left: 180px;
         }
 
+        body.sidebar-collapsed .main-content {
+            margin-left: 60px !important;
+        }
+
+        /* Ajuste para o botão de toggle não sobrepor o dashboard */
         .sidebar-toggle {
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 1030;
-            background: rgba(44, 62, 80, 0.9);
+            width: 100%;
+            background: rgba(44, 62, 80, 0.95);
             border: none;
             color: white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0;
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            font-size: 1.5rem;
+            transition: background 0.3s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
 
-        .sidebar-toggle:hover {
-            background: rgba(44, 62, 80, 1);
-            transform: scale(1.1);
+        .sidebar-toggle:focus, .sidebar-toggle:hover {
+            background: #223042;
+            color: #ffd700;
         }
 
         /* Responsividade */
@@ -154,25 +129,37 @@
             .main-content {
                 margin-left: 0 !important;
             }
+            body.sidebar-collapsed .main-content {
+                margin-left: 0 !important;
+            }
+        }
+
+        body {
+            overflow-x: hidden;
+        }
+
+        .container-fluid {
+            max-width: 1000px;
+            margin: 0 auto;
         }
     </style>
 </head>
 
 <body>
-    <!-- Botão toggle da sidebar -->
-    <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">
-        <i class="bi bi-list"></i>
-    </button>
-
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <nav class="col-md-3 col-lg-2 d-md-block sidebar" id="sidebar">
+            <nav class="sidebar position-fixed" id="sidebar" style="width:180px;">
                 <div class="position-sticky pt-3">
                     <div class="text-center mb-4">
                         <i class="bi bi-thermometer-half text-white" style="font-size: 2rem;"></i>
                         <h5 class="text-white mt-2">Monitoramento</h5>
                     </div>
+
+                    <!-- Botão toggle dentro da sidebar -->
+                    <button class="sidebar-toggle w-100 mb-3" onclick="toggleSidebar()" id="sidebarToggle">
+                        <i class="bi bi-list"></i>
+                    </button>
 
                     <ul class="nav flex-column">
                         <li class="nav-item">
@@ -204,7 +191,7 @@
             </nav>
 
             <!-- Main content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+            <main class="main-content" style="margin-left:180px;">
                 <!-- Header -->
                 <div
                     class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
