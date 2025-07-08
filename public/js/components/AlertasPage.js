@@ -293,13 +293,13 @@ class AlertasPage {
                     </span>
                 </td>
                 <td>
-                    <span class="temperature-display ${this.getTemperatureClass(alerta.temperatura, alerta.temperatura_min, alerta.temperatura_max)}">
+                    <span class="temperature-display ${this.getTemperatureClass(alerta.temperatura, alerta.temperatura_ideal_min, alerta.temperatura_ideal_max)}">
                         ${alerta.temperatura.toFixed(1)}°C
                     </span>
                 </td>
                 <td>
                     <small>
-                        ${alerta.temperatura_min}°C - ${alerta.temperatura_max}°C
+                        ${alerta.temperatura_ideal_min}°C - ${alerta.temperatura_ideal_max}°C
                     </small>
                 </td>
                 <td>
@@ -448,8 +448,8 @@ class AlertasPage {
                         <h6>Dados de Temperatura</h6>
                         <table class="table table-sm">
                             <tr><td><strong>Temperatura:</strong></td><td>${alerta.temperatura.toFixed(1)}°C</td></tr>
-                            <tr><td><strong>Limite Mínimo:</strong></td><td>${alerta.temperatura_min}°C</td></tr>
-                            <tr><td><strong>Limite Máximo:</strong></td><td>${alerta.temperatura_max}°C</td></tr>
+                            <tr><td><strong>Limite Mínimo:</strong></td><td>${alerta.temperatura_ideal_min}°C</td></tr>
+                            <tr><td><strong>Limite Máximo:</strong></td><td>${alerta.temperatura_ideal_max}°C</td></tr>
                             <tr><td><strong>Diferença:</strong></td><td>${this.calcularDiferenca(alerta)}</td></tr>
                         </table>
                     </div>
@@ -483,10 +483,10 @@ class AlertasPage {
     }
 
     calcularDiferenca(alerta) {
-        if (alerta.temperatura > alerta.temperatura_max) {
-            return `+${(alerta.temperatura - alerta.temperatura_max).toFixed(1)}°C (acima do máximo)`;
-        } else if (alerta.temperatura < alerta.temperatura_min) {
-            return `${(alerta.temperatura - alerta.temperatura_min).toFixed(1)}°C (abaixo do mínimo)`;
+        if (alerta.temperatura > alerta.temperatura_ideal_max) {
+            return `+${(alerta.temperatura - alerta.temperatura_ideal_max).toFixed(1)}°C (acima do máximo)`;
+        } else if (alerta.temperatura < alerta.temperatura_ideal_min) {
+            return `${(alerta.temperatura - alerta.temperatura_ideal_min).toFixed(1)}°C (abaixo do mínimo)`;
         }
         return '0°C (dentro dos limites)';
     }
@@ -596,8 +596,8 @@ class AlertasPage {
             alerta.sala_nome || 'Sala ' + alerta.id_sala,
             this.getTipoAlertaDisplayName(alerta.tipo),
             alerta.temperatura.toFixed(1) + '°C',
-            alerta.temperatura_min + '°C',
-            alerta.temperatura_max + '°C',
+            alerta.temperatura_ideal_min + '°C',
+            alerta.temperatura_ideal_max + '°C',
             alerta.status === 'ativo' ? 'Ativo' : 'Resolvido',
             new Date(alerta.data_hora).toLocaleString('pt-BR')
         ]);

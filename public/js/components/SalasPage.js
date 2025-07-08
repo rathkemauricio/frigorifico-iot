@@ -254,13 +254,13 @@ class SalasPage {
                     </span>
                 </td>
                 <td>
-                    <span class="temperature-display ${this.getTemperatureClass(sala.temperatura_atual, sala.temperatura_min, sala.temperatura_max)}">
+                    <span class="temperature-display ${this.getTemperatureClass(sala.temperatura_atual, sala.temperatura_ideal_min, sala.temperatura_ideal_max)}">
                         ${sala.temperatura_atual ? sala.temperatura_atual.toFixed(1) + '°C' : 'N/A'}
                     </span>
                 </td>
                 <td>
                     <small>
-                        ${sala.temperatura_min}°C - ${sala.temperatura_max}°C
+                        ${sala.temperatura_ideal_min}°C - ${sala.temperatura_ideal_max}°C
                     </small>
                 </td>
                 <td>
@@ -292,7 +292,7 @@ class SalasPage {
         const totalSalas = this.salas.length;
         const salasAtivas = this.salas.filter(s => s.status === 'ativo').length;
         const salasComAlerta = this.salas.filter(s => s.temperatura_atual &&
-            (s.temperatura_atual < s.temperatura_min || s.temperatura_atual > s.temperatura_max)).length;
+            (s.temperatura_atual < s.temperatura_ideal_min || s.temperatura_atual > s.temperatura_ideal_max)).length;
 
         const tempMedia = this.salas
             .filter(s => s.temperatura_atual)
@@ -337,7 +337,7 @@ class SalasPage {
             return '<span class="badge bg-secondary">Sem Dados</span>';
         }
 
-        if (sala.temperatura_atual < sala.temperatura_min || sala.temperatura_atual > sala.temperatura_max) {
+        if (sala.temperatura_atual < sala.temperatura_ideal_min || sala.temperatura_atual > sala.temperatura_ideal_max) {
             return '<span class="badge bg-danger">Alerta</span>';
         }
 
@@ -362,9 +362,9 @@ class SalasPage {
 
             document.getElementById('salaModalTitle').textContent = 'Editar Sala';
             document.getElementById('salaNome').value = this.currentSala.nome;
-            document.getElementById('salaTipo').value = this.currentSala.tipo;
-            document.getElementById('salaTempMin').value = this.currentSala.temperatura_min;
-            document.getElementById('salaTempMax').value = this.currentSala.temperatura_max;
+            document.getElementById('salaTipo').value = this.currentSala.tipo || '';
+            document.getElementById('salaTempMin').value = this.currentSala.temperatura_ideal_min;
+            document.getElementById('salaTempMax').value = this.currentSala.temperatura_ideal_max;
             document.getElementById('salaDescricao').value = this.currentSala.descricao || '';
 
             const modal = new bootstrap.Modal(document.getElementById('salaModal'));
@@ -386,8 +386,8 @@ class SalasPage {
         const salaData = {
             nome: document.getElementById('salaNome').value,
             tipo: document.getElementById('salaTipo').value,
-            temperatura_min: parseFloat(document.getElementById('salaTempMin').value),
-            temperatura_max: parseFloat(document.getElementById('salaTempMax').value),
+            temperatura_ideal_min: parseFloat(document.getElementById('salaTempMin').value),
+            temperatura_ideal_max: parseFloat(document.getElementById('salaTempMax').value),
             descricao: document.getElementById('salaDescricao').value
         };
 
@@ -444,7 +444,7 @@ class SalasPage {
                 Sala: ${sala.nome}
                 Tipo: ${this.getTipoDisplayName(sala.tipo)}
                 Temperatura Atual: ${sala.temperatura_atual ? sala.temperatura_atual.toFixed(1) + '°C' : 'N/A'}
-                Limites: ${sala.temperatura_min}°C - ${sala.temperatura_max}°C
+                Limites: ${sala.temperatura_ideal_min}°C - ${sala.temperatura_ideal_max}°C
                 Status: ${this.getStatusBadge(sala).replace(/<[^>]*>/g, '')}
                 Última Leitura: ${sala.ultima_leitura ? new Date(sala.ultima_leitura).toLocaleString('pt-BR') : 'N/A'}
             `;
