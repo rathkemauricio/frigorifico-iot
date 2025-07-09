@@ -65,7 +65,7 @@ class AlertasPage {
 
             <!-- Cards de Resumo -->
             <div class="row mb-4">
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="card bg-danger text-white">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
@@ -80,13 +80,13 @@ class AlertasPage {
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="card bg-warning text-white">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
                                     <h4 class="card-title" id="alertasAtivosCount">0</h4>
-                                    <p class="card-text">Alertas Ativos</p>
+                                    <p class="card-text">Alertas Recentes</p>
                                 </div>
                                 <div>
                                     <i class="bi bi-clock fa-2x"></i>
@@ -95,22 +95,8 @@ class AlertasPage {
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="card-title" id="alertasResolvidosCount">0</h4>
-                                    <p class="card-text">Resolvidos</p>
-                                </div>
-                                <div>
-                                    <i class="bi bi-check-circle fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
+                
+                <div class="col-md-4">
                     <div class="card bg-info text-white">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
@@ -127,46 +113,7 @@ class AlertasPage {
                 </div>
             </div>
 
-            <!-- Filtros -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="bi bi-funnel me-2"></i>
-                                Filtros
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <label for="filtroStatus" class="form-label">Status</label>
-                                    <select class="form-select" id="filtroStatus" onchange="alertasPage.aplicarFiltros()">
-                                        <option value="todos">Todos</option>
-                                        <option value="ativo">Ativos</option>
-                                        <option value="resolvido">Resolvidos</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="filtroSala" class="form-label">Sala</label>
-                                    <select class="form-select" id="filtroSala" onchange="alertasPage.aplicarFiltros()">
-                                        <option value="todas">Todas as Salas</option>
-                                        <!-- Opções serão carregadas dinamicamente -->
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="filtroDataInicio" class="form-label">Data Início</label>
-                                    <input type="datetime-local" class="form-control" id="filtroDataInicio" onchange="alertasPage.aplicarFiltros()">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="filtroDataFim" class="form-label">Data Fim</label>
-                                    <input type="datetime-local" class="form-control" id="filtroDataFim" onchange="alertasPage.aplicarFiltros()">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
 
             <!-- Tabela de Alertas -->
             <div class="row">
@@ -189,7 +136,6 @@ class AlertasPage {
                                             <th>Temperatura</th>
                                             <th>Limites</th>
                                             <th>Data/Hora</th>
-                                            <th>Status</th>
                                             <th>Ações</th>
                                         </tr>
                                     </thead>
@@ -263,6 +209,8 @@ class AlertasPage {
 
             const select = document.getElementById('filtroSala');
             if (select) {
+                // Limpa todas as opções antes de adicionar novamente
+                select.innerHTML = '<option value="todas">Todas as Salas</option>';
                 salas.forEach(sala => {
                     const option = document.createElement('option');
                     option.value = sala.id;
@@ -288,8 +236,8 @@ class AlertasPage {
                     <strong>${alerta.sala_nome || 'Sala ' + alerta.id_sala}</strong>
                 </td>
                 <td>
-                    <span class="badge bg-${this.getTipoAlertaBadgeColor(alerta.tipo)}">
-                        ${this.getTipoAlertaDisplayName(alerta.tipo)}
+                    <span class="badge bg-${this.getTipoAlertaBadgeColor(alerta.tipo_alerta)}">
+                        ${this.getTipoAlertaDisplayName(alerta.tipo_alerta)}
                     </span>
                 </td>
                 <td>
@@ -307,9 +255,7 @@ class AlertasPage {
                         ${new Date(alerta.data_hora).toLocaleString('pt-BR')}
                     </small>
                 </td>
-                <td>
-                    ${this.getStatusBadge(alerta.status)}
-                </td>
+               
                 <td>
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-info" onclick="alertasPage.viewAlertaDetails(${alerta.id})" title="Detalhes">
@@ -352,7 +298,7 @@ class AlertasPage {
 
         // Filtro por sala
         if (this.filtros.sala !== 'todas') {
-            alertasFiltrados = alertasFiltrados.filter(a => a.id_sala == this.filtros.sala);
+            alertasFiltrados = alertasFiltrados.filter(a => String(a.id_sala) === String(this.filtros.sala));
         }
 
         // Filtro por data
@@ -376,19 +322,28 @@ class AlertasPage {
         this.filtros.sala = document.getElementById('filtroSala').value;
         this.filtros.dataInicio = document.getElementById('filtroDataInicio').value;
         this.filtros.dataFim = document.getElementById('filtroDataFim').value;
-
+        console.log('[DEBUG] Filtros aplicados:', this.filtros);
         this.renderAlertasTable();
     }
 
-    updateCounters() {
+    async updateCounters() {
+        // Buscar alertas recentes do endpoint correto para alertas ativos
+        try {
+            const response = await API.getAlertasRecentes();
+            const alertasRecentes = response.data || [];
+            // Considera como ativo se status for 'ativo' ou se não houver campo status
+            const ativos = alertasRecentes.filter(a => a.status === 'ativo' || a.status === undefined);
+            document.getElementById('alertasAtivosCount').textContent = ativos.length;
+        } catch (error) {
+            console.error('Erro ao buscar alertas recentes:', error);
+            document.getElementById('alertasAtivosCount').textContent = 'Erro';
+        }
+
+        // Os outros cards continuam usando os dados locais
         const totalAlertas = this.alertas.length;
-        const alertasAtivos = this.alertas.filter(a => a.status === 'ativo').length;
-        const alertasResolvidos = this.alertas.filter(a => a.status === 'resolvido').length;
         const salasComAlerta = new Set(this.alertas.map(a => a.id_sala)).size;
 
         document.getElementById('totalAlertasCount').textContent = totalAlertas;
-        document.getElementById('alertasAtivosCount').textContent = alertasAtivos;
-        document.getElementById('alertasResolvidosCount').textContent = alertasResolvidos;
         document.getElementById('salasComAlertaCount').textContent = salasComAlerta;
     }
 
@@ -439,7 +394,7 @@ class AlertasPage {
                         <table class="table table-sm">
                             <tr><td><strong>ID:</strong></td><td>${alerta.id}</td></tr>
                             <tr><td><strong>Sala:</strong></td><td>${alerta.sala_nome || 'Sala ' + alerta.id_sala}</td></tr>
-                            <tr><td><strong>Tipo:</strong></td><td>${this.getTipoAlertaDisplayName(alerta.tipo)}</td></tr>
+                            <tr><td><strong>Tipo:</strong></td><td>${this.getTipoAlertaDisplayName(alerta.tipo_alerta)}</td></tr>
                             <tr><td><strong>Status:</strong></td><td>${this.getStatusBadge(alerta.status)}</td></tr>
                             <tr><td><strong>Data/Hora:</strong></td><td>${new Date(alerta.data_hora).toLocaleString('pt-BR')}</td></tr>
                         </table>

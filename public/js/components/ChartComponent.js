@@ -388,34 +388,42 @@ function showGraficoSala(salaId) {
 
 // Função global para renderizar página de gráficos
 window.renderPaginaGraficos = function (salas) {
-    console.log('🎨 Renderizando página de gráficos...');
-
-    // Verificar se Chart.js está disponível
-    if (typeof Chart === 'undefined') {
-        console.error('Chart.js não está carregado. Aguardando...');
-        // Evitar recursão infinita - tentar apenas 5 vezes
-        if (!window.renderPaginaGraficos.attempts) {
-            window.renderPaginaGraficos.attempts = 0;
-        }
-        if (window.renderPaginaGraficos.attempts < 5) {
-            window.renderPaginaGraficos.attempts++;
-            setTimeout(() => window.renderPaginaGraficos(salas), 1000);
-        } else {
-            console.error('Chart.js não pôde ser carregado após 5 tentativas');
-        }
-        return;
-    }
-
-    // Resetar contador de tentativas
-    window.renderPaginaGraficos.attempts = 0;
+    console.log('🎨 [DEBUG] Renderizando página de gráficos...');
 
     const container = document.getElementById('outrasSecoes');
     if (!container) {
-        console.error('Container para gráficos não encontrado');
+        console.error('[DEBUG] Container para gráficos não encontrado');
         return;
     }
 
-    // Criar conteúdo da página de gráficos
+    // Gerar checkboxes das salas
+    const salasCheckboxes = salas.map((sala, index) => `
+        <div class="form-check form-check-inline">
+            <input class="form-check-input sala-checkbox" type="checkbox" id="sala${sala.id}" value="${sala.id}">
+            <label class="form-check-label" for="sala${sala.id}" style="color: ${getCorSala(index)};">
+                <i class="bi bi-circle-fill me-1"></i>
+                ${sala.nome}
+            </label>
+        </div>
+    `).join('');
+
+    // Gerar cards das salas individuais
+    const salasCards = salas.map((sala, index) => `
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-box-fill" style="color: ${getCorSala(index)};"></i>
+                        ${sala.nome}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoSala${sala.id}" width="300" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
     container.innerHTML = `
         <div class="row">
             <div class="col-12">
@@ -426,78 +434,132 @@ window.renderPaginaGraficos = function (salas) {
             </div>
         </div>
         
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="bi bi-thermometer-half"></i>
-                            Visão Geral - Todas as Salas
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="graficoGeral" width="400" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
         <div class="row">
-            ${salas.map(sala => `
-                <div class="col-lg-6 col-xl-4 mb-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="bi bi-box-fill"></i>
-                                ${sala.nome}
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="graficoSala${sala.id}" width="300" height="150"></canvas>
-                        </div>
-                    </div>
-                </div>
-            `).join('')}
+            ${salasCards}
         </div>
     `;
 
+    // Event listeners para filtros de tempo
+    document.querySelectorAll('.filtro-tempo').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.classList.contains('active')) return;
+            document.querySelectorAll('.filtro-tempo').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const periodo = this.dataset.periodo;
+            console.log('[DEBUG] Filtro de período selecionado:', periodo);
+            renderizarGraficoGeral(salas, periodo);
+        });
+    });
+
+   
+    document.querySelectorAll('.sala-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const periodoAtivo = document.querySelector('.filtro-tempo.active').dataset.periodo;
+            console.log('[DEBUG] Salas selecionadas alteradas');
+            renderizarGraficoGeral(salas, periodoAtivo);
+        });
+    });
+
     // Renderizar gráficos após o DOM ser atualizado
     setTimeout(() => {
-        renderizarGraficoGeral(salas);
+        renderizarGraficoGeral(salas, '24h');
         salas.forEach(sala => {
             renderizarGraficoSala(sala);
         });
     }, 100);
 };
 
-// Função para renderizar gráfico geral
-function renderizarGraficoGeral(salas) {
+// Variáveis globais para instâncias dos gráficos
+window.chartGeralInstance = null;
+window.chartSalaInstances = {};
+
+function renderizarGraficoGeral(salas, periodo = '24h') {
+    console.log('[DEBUG] Renderizando gráfico geral para período:', periodo);
     const ctx = document.getElementById('graficoGeral');
+    const loadingElement = document.getElementById('loadingGraficoGeral');
+    const alertaSemSalas = document.getElementById('alertaSemSalas');
     if (!ctx) return;
 
-    // Buscar dados das últimas 24 horas
-    Promise.all(salas.map(sala =>
-        API.getLeiturasSala(sala.id, 24)
+    // Destruir instância global se existir
+    if (window.chartGeralInstance) {
+        console.log('[DEBUG] Destruindo instância global do gráfico geral');
+        window.chartGeralInstance.destroy();
+        window.chartGeralInstance = null;
+    }
+    ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+
+    // Obter salas selecionadas
+    const salasSelecionadas = Array.from(document.querySelectorAll('.sala-checkbox:checked'))
+        .map(checkbox => parseInt(checkbox.value))
+        .map(salaId => salas.find(sala => sala.id === salaId))
+        .filter(sala => sala);
+    console.log('[DEBUG] Salas selecionadas:', salasSelecionadas.map(s => s.nome));
+
+    if (salasSelecionadas.length === 0) {
+        if (loadingElement) loadingElement.style.display = 'none';
+        ctx.style.display = 'none';
+        if (alertaSemSalas) alertaSemSalas.style.display = 'block';
+        return;
+    }
+    if (alertaSemSalas) alertaSemSalas.style.display = 'none';
+    if (loadingElement) loadingElement.style.display = 'block';
+    ctx.style.display = 'none';
+
+    let tituloGrafico;
+    switch (periodo) {
+        case '24h':
+            tituloGrafico = 'Temperaturas - Últimas 24 Horas';
+            break;
+        case '7d':
+            tituloGrafico = 'Temperaturas - Última Semana';
+            break;
+        case '30d':
+            tituloGrafico = 'Temperaturas - Último Mês';
+            break;
+        default:
+            tituloGrafico = `Temperaturas - Período: ${periodo}`;
+    }
+
+    Promise.all(salasSelecionadas.map(sala =>
+        API.getGraficoSala(sala.id, periodo, 100)
     )).then(responses => {
         const datasets = responses.map((response, index) => {
-            const sala = salas[index];
-            const data = response.data || [];
-
+            const sala = salasSelecionadas[index];
+            const dadosGrafico = response.data || {};
+            const pontos = dadosGrafico.pontos || [];
+            console.log(`[DEBUG] Sala ${sala.nome} - pontos:`, pontos);
+            const salaIndex = salas.findIndex(s => s.id === sala.id);
             return {
                 label: sala.nome,
-                data: data.map(leitura => ({
-                    x: new Date(leitura.data_hora),
-                    y: leitura.temperatura
+                data: pontos.map(ponto => ({
+                    x: new Date(ponto.data_hora),
+                    y: ponto.temperatura
                 })),
-                borderColor: getCorSala(index),
-                backgroundColor: getCorSala(index, 0.1),
+                borderColor: getCorSala(salaIndex),
+                backgroundColor: getCorSala(salaIndex, 0.1),
                 borderWidth: 2,
                 fill: false,
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 3,
+                pointHoverRadius: 6
             };
-        });
+        }).filter(ds => ds.data.length > 0);
 
-        new Chart(ctx, {
+        if (loadingElement) loadingElement.style.display = 'none';
+
+        if (datasets.length === 0) {
+            ctx.style.display = 'block';
+            ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+            ctx.getContext('2d').fillStyle = '#dc3545';
+            ctx.getContext('2d').font = '16px Arial';
+            ctx.getContext('2d').textAlign = 'center';
+            ctx.getContext('2d').fillText('Nenhum dado disponível para o período selecionado', ctx.width / 2, ctx.height / 2);
+            return;
+        }
+
+        ctx.style.display = 'block';
+        console.log('[DEBUG] Criando nova instância global do gráfico geral');
+        window.chartGeralInstance = new Chart(ctx, {
             type: 'line',
             data: { datasets },
             options: {
@@ -506,43 +568,82 @@ function renderizarGraficoGeral(salas) {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Temperaturas - Últimas 24 Horas'
+                        text: tituloGrafico,
+                        font: { size: 16, weight: 'bold' }
                     },
                     legend: {
-                        position: 'top'
+                        position: 'top',
+                        labels: { usePointStyle: true, padding: 20 }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            title: function (context) {
+                                if (context[0]) {
+                                    return new Date(context[0].parsed.x).toLocaleString('pt-BR');
+                                }
+                                return '';
+                            },
+                            label: function (context) {
+                                return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}°C`;
+                            }
+                        }
                     }
                 },
                 scales: {
                     x: {
-                        type: 'category',
-                        title: {
-                            display: true,
-                            text: 'Horário'
-                        }
+                        type: 'time',
+                        time: {
+                            unit: periodo === '24h' ? 'hour' : 'day',
+                            displayFormats: { hour: 'HH:mm', day: 'dd/MM' }
+                        },
+                        title: { display: true, text: 'Horário' },
+                        ticks: { maxTicksLimit: 10 }
                     },
                     y: {
-                        title: {
-                            display: true,
-                            text: 'Temperatura (°C)'
+                        title: { display: true, text: 'Temperatura (°C)' },
+                        ticks: {
+                            callback: function (value) {
+                                return value.toFixed(1) + '°C';
+                            }
                         }
                     }
+                },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false },
+                elements: {
+                    point: { radius: 3, hoverRadius: 6 },
+                    line: { tension: 0.4 }
                 }
             }
         });
     }).catch(error => {
-        console.error('Erro ao carregar dados para gráfico geral:', error);
+        console.error('[DEBUG] Erro ao carregar dados para gráfico geral:', error);
+        if (loadingElement) loadingElement.style.display = 'none';
+        ctx.style.display = 'block';
+        ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+        ctx.getContext('2d').fillStyle = '#dc3545';
+        ctx.getContext('2d').font = '16px Arial';
+        ctx.getContext('2d').textAlign = 'center';
+        ctx.getContext('2d').fillText('Erro ao carregar dados do gráfico', ctx.width / 2, ctx.height / 2);
     });
 }
 
-// Função para renderizar gráfico individual de sala
 function renderizarGraficoSala(sala) {
     const ctx = document.getElementById(`graficoSala${sala.id}`);
     if (!ctx) return;
 
+    // Destruir instância global se existir
+    if (window.chartSalaInstances[sala.id]) {
+        console.log(`[DEBUG] Destruindo instância global do gráfico da sala ${sala.nome}`);
+        window.chartSalaInstances[sala.id].destroy();
+        window.chartSalaInstances[sala.id] = null;
+    }
+    ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+
     // Buscar dados das últimas 6 horas
     API.getLeiturasSala(sala.id, 6).then(response => {
         const data = response.data || [];
-
         const chartData = {
             labels: data.map(leitura => {
                 const date = new Date(leitura.data_hora);
@@ -587,7 +688,17 @@ function renderizarGraficoSala(sala) {
             });
         }
 
-        new Chart(ctx, {
+        if (data.length === 0) {
+            ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+            ctx.getContext('2d').fillStyle = '#dc3545';
+            ctx.getContext('2d').font = '16px Arial';
+            ctx.getContext('2d').textAlign = 'center';
+            ctx.getContext('2d').fillText('Nenhum dado disponível', ctx.width / 2, ctx.height / 2);
+            return;
+        }
+
+        console.log(`[DEBUG] Criando nova instância global do gráfico da sala ${sala.nome}`);
+        window.chartSalaInstances[sala.id] = new Chart(ctx, {
             type: 'line',
             data: chartData,
             options: {
@@ -616,7 +727,12 @@ function renderizarGraficoSala(sala) {
             }
         });
     }).catch(error => {
-        console.error(`Erro ao carregar dados para sala ${sala.id}:`, error);
+        console.error(`[DEBUG] Erro ao carregar dados para sala ${sala.id}:`, error);
+        ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+        ctx.getContext('2d').fillStyle = '#dc3545';
+        ctx.getContext('2d').font = '16px Arial';
+        ctx.getContext('2d').textAlign = 'center';
+        ctx.getContext('2d').fillText('Erro ao carregar dados', ctx.width / 2, ctx.height / 2);
     });
 }
 

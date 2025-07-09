@@ -138,39 +138,13 @@ module.exports = function (db) {
         const { id_sala } = req.params;
         const { periodo = '24h', pontos = 50 } = req.query;
 
-        let dataInicio;
-        switch (periodo) {
-            case '1h':
-                dataInicio = new Date(Date.now() - 60 * 60 * 1000);
-                break;
-            case '6h':
-                dataInicio = new Date(Date.now() - 6 * 60 * 60 * 1000);
-                break;
-            case '24h':
-                dataInicio = new Date(Date.now() - 24 * 60 * 60 * 1000);
-                break;
-            case '7d':
-                dataInicio = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-                break;
-            default:
-                dataInicio = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        }
+        console.log('[DEBUG] Rota /grafico/:id_sala chamada');
+        console.log('[DEBUG] Parâmetros:', { id_sala, periodo, pontos });
 
-        const query = `
-      SELECT 
-        l.temperatura,
-        l.data_hora,
-        s.temperatura_ideal_min,
-        s.temperatura_ideal_max
-      FROM leituras l
-      JOIN salas s ON l.id_sala = s.id
-      WHERE l.id_sala = ? AND l.data_hora >= ?
-      ORDER BY l.data_hora ASC
-      LIMIT ?
-    `;
-
-        db.all(query, [id_sala, dataInicio.toISOString(), pontos], (err, leituras) => {
+        // Primeiro, buscar a data mais recente dos dados para esta sala
+        db.get('SELECT MAX(data_hora) as max_data FROM leituras WHERE id_sala = ?', [id_sala], (err, result) => {
             if (err) {
+                console.error('[DEBUG] Erro ao buscar data máxima:', err);
                 return res.status(500).json({
                     success: false,
                     message: 'Erro ao buscar dados do gráfico',
@@ -178,32 +152,111 @@ module.exports = function (db) {
                 });
             }
 
-            // Buscar informações da sala
-            db.get('SELECT * FROM salas WHERE id = ?', [id_sala], (err, sala) => {
+            if (!result.max_data) {
+                console.log('[DEBUG] Nenhum dado encontrado para a sala');
+                return res.json({
+                    success: true,
+                    data: {
+                        sala: null,
+                        periodo: periodo,
+                        data_inicio: null,
+                        pontos: []
+                    }
+                });
+            }
+
+            // Usar a data mais recente como referência
+            const dataReferencia = new Date(result.max_data);
+            console.log('[DEBUG] Data referência (mais recente):', dataReferencia.toISOString());
+
+            let dataInicio;
+            switch (periodo) {
+                case '1h':
+                    dataInicio = new Date(dataReferencia.getTime() - 60 * 60 * 1000);
+                    break;
+                case '6h':
+                    dataInicio = new Date(dataReferencia.getTime() - 6 * 60 * 60 * 1000);
+                    break;
+                case '24h':
+                    dataInicio = new Date(dataReferencia.getTime() - 24 * 60 * 60 * 1000);
+                    break;
+                case '7d':
+                    dataInicio = new Date(dataReferencia.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    break;
+                case '30d':
+                    dataInicio = new Date(dataReferencia.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    break;
+                default:
+                    dataInicio = new Date(dataReferencia.getTime() - 24 * 60 * 60 * 1000);
+            }
+
+            console.log('[DEBUG] Data atual do servidor:', new Date().toISOString());
+            console.log('[DEBUG] Data início calculada:', dataInicio.toISOString());
+            console.log('[DEBUG] Período selecionado:', periodo);
+
+            const query = `
+          SELECT 
+            l.temperatura,
+            l.data_hora,
+            s.temperatura_ideal_min,
+            s.temperatura_ideal_max
+          FROM leituras l
+          JOIN salas s ON l.id_sala = s.id
+          WHERE l.id_sala = ? AND l.data_hora >= ?
+          ORDER BY l.data_hora ASC
+          LIMIT ?
+        `;
+
+            console.log('[DEBUG] Query SQL:', query);
+            console.log('[DEBUG] Parâmetros da query:', [id_sala, dataInicio.toISOString(), pontos]);
+
+            db.all(query, [id_sala, dataInicio.toISOString(), pontos], (err, leituras) => {
                 if (err) {
+                    console.error('[DEBUG] Erro na query:', err);
                     return res.status(500).json({
                         success: false,
-                        message: 'Erro ao buscar informações da sala',
+                        message: 'Erro ao buscar dados do gráfico',
                         error: err.message
                     });
                 }
 
-                const dadosGrafico = {
-                    sala: sala,
-                    periodo: periodo,
-                    data_inicio: dataInicio.toISOString(),
-                    pontos: leituras.map(leitura => ({
-                        temperatura: leitura.temperatura,
-                        data_hora: leitura.data_hora,
-                        timestamp: new Date(leitura.data_hora).getTime(),
-                        is_alerta: leitura.temperatura < leitura.temperatura_ideal_min ||
-                            leitura.temperatura > leitura.temperatura_ideal_max
-                    }))
-                };
+                console.log('[DEBUG] Leituras encontradas:', leituras.length);
+                if (leituras.length > 0) {
+                    console.log('[DEBUG] Primeira leitura:', leituras[0]);
+                    console.log('[DEBUG] Última leitura:', leituras[leituras.length - 1]);
+                }
 
-                res.json({
-                    success: true,
-                    data: dadosGrafico
+                // Buscar informações da sala
+                db.get('SELECT * FROM salas WHERE id = ?', [id_sala], (err, sala) => {
+                    if (err) {
+                        console.error('[DEBUG] Erro ao buscar sala:', err);
+                        return res.status(500).json({
+                            success: false,
+                            message: 'Erro ao buscar informações da sala',
+                            error: err.message
+                        });
+                    }
+
+                    const dadosGrafico = {
+                        sala: sala,
+                        periodo: periodo,
+                        data_inicio: dataInicio.toISOString(),
+                        pontos: leituras.map(leitura => ({
+                            temperatura: leitura.temperatura,
+                            data_hora: leitura.data_hora,
+                            timestamp: new Date(leitura.data_hora).getTime(),
+                            is_alerta: leitura.temperatura < leitura.temperatura_ideal_min ||
+                                leitura.temperatura > leitura.temperatura_ideal_max
+                        }))
+                    };
+
+                    console.log('[DEBUG] Resposta final - data_inicio:', dadosGrafico.data_inicio);
+                    console.log('[DEBUG] Resposta final - pontos:', dadosGrafico.pontos.length);
+
+                    res.json({
+                        success: true,
+                        data: dadosGrafico
+                    });
                 });
             });
         });
@@ -226,6 +279,9 @@ module.exports = function (db) {
                 break;
             case '7d':
                 dataInicio = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                break;
+            case '30d':
+                dataInicio = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
                 break;
             default:
                 dataInicio = new Date(Date.now() - 24 * 60 * 60 * 1000);
